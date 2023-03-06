@@ -2,33 +2,25 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-bool found = false;
+bool found = false, mir_X = false, mir_Y = false;
 
-int** RotateLeft(int** spot){
-    //turn 90* counter clockwise
-    for (int i = 0; i < 8 / 2; i = i + 1)
-    {
-        for (int j = i; j < 8 - i - 1; j = j + 1)
-        {
-            int temp = spot[i][j];
-            spot[i][j] = spot[j][8-1-i];
-            spot[j][8-1-i] = spot[8-1-i][8-1-j];
-            spot[8-1-i][8-1-j] = spot[8-1-j][i];
-            spot[8-1-j][i] = temp;
+int** Mirror_Y(int** spot){
+    for (int i = 0; i < 8; ++i){
+        for (int j = 4; j < 8; ++j){
+            int temp = spot[i][7 - j];
+            spot[i][7 - j] = spot[i][j];
+            spot[i][j] = temp;
         }
     }
     return spot;
 }
 
-int** RotateRight(int **spot){
-    //turn 90* clockwise
-    for (int i = 0; i < 8 / 2; i++) {
-        for (int j = i; j < 8 - i - 1; j++) {
-            int temp = spot[i][j];
-            spot[i][j] = spot[8 - 1 - j][i];
-            spot[8 - 1 - j][i] = spot[8 - 1 - i][8 - 1 - j];
-            spot[8 - 1 - i][8 - 1 - j] = spot[j][8 - 1 - i];
-            spot[j][8 - 1 - i] = temp;
+int** Mirror_X(int **spot){
+    for (int i = 4; i < 8; ++i){
+        for (int j = 0; j < 8; ++j){
+            int temp = spot[7 - i][j];
+            spot[7 - i][j] = spot[i][j];
+            spot[i][j] = temp;
         }
     }
     return spot;
@@ -62,7 +54,7 @@ int** placeQueen(int** spot, int row, int col){
     return spot;
 }
 
-void checkRow(int** spot, int row, int quarter){ //queen is set to true, check next line
+void checkRow(int** spot, int row){ //queen is set to true, check next line
 
     if(found)
         return;
@@ -70,25 +62,12 @@ void checkRow(int** spot, int row, int quarter){ //queen is set to true, check n
     if(row > 4){
         found = true;
 
-        //visur nuliai kur netas ketvirtis
-         for(int i = 0; i < 8; ++i){
-            for(int j = 0; j < 8; ++j){
-                if(i > 4 || j > 4)
-                    spot[i][j] = 0;
-            }
+        if(mir_X){
+            spot = Mirror_X(spot);
         }
 
-        switch(quarter){
-        case 1:
-            spot = RotateRight(spot);
-            break;
-        case 2:
-            spot = RotateRight(spot);
-            spot = RotateRight(spot);
-            break;
-        case 3:
-            spot = RotateLeft(spot);
-            break;
+        if(mir_Y){
+            spot = Mirror_Y(spot);
         }
 
         printf("Answer: \n");
@@ -111,7 +90,6 @@ void checkRow(int** spot, int row, int quarter){ //queen is set to true, check n
     }
 
     for(int i = 0; i < 5; ++i){
-
         if(found)
             return;
 
@@ -124,7 +102,7 @@ void checkRow(int** spot, int row, int quarter){ //queen is set to true, check n
         }
 
         if(spot[row][i] == 1){ //try to place a queen on the board
-            checkRow(placeQueen(spot, row, i), row + 1, quarter);
+            checkRow(placeQueen(spot, row, i), row + 1);
 
             ++x;
 
@@ -152,68 +130,41 @@ int main()
         availableSpots[i] = values + i * 8;
     }
 
+    //init
     for(int i = 0; i < 8; ++i){
         for(int j = 0; j < 8; ++j){
-            availableSpots[i][j] = 1;
+            if(i > 4 || j > 4)
+                availableSpots[i][j] = 0;
+            else
+                availableSpots[i][j] = 1;
         }
     }
 
     //impossible to place a queen on the following:
     availableSpots[0][3] = 0;
-    availableSpots[0][4] = 0;
     availableSpots[3][0] = 0;
-    availableSpots[4][0] = 0;
-    availableSpots[3][7] = 0;
-    availableSpots[4][7] = 0;
-    availableSpots[7][3] = 0;
-    availableSpots[7][4] = 0;
     availableSpots[2][2] = 0;
-    availableSpots[2][5] = 0;
-    availableSpots[5][2] = 0;
-    availableSpots[5][5] = 0;//??
 
     printf("Enter a position for the 1st queen (x, y): ");
     scanf("%d%d", &start_col, &start_row);
+
+    if(start_col > 3){
+        start_col = 7 - start_col;
+        mir_Y = true;
+    }
+
+    if(start_row > 3){
+        start_row = 7 - start_row;
+        mir_X = true;
+    }
 
     if(availableSpots[start_row][start_col] == 0){
         printf("Neimanoma");
         return 0;
     }
 
-    //4ketvirciai
-    if(start_col > 3 && start_row <= 3){//top right
-
-        temp_row = 7 - start_col;
-        temp_col = start_row;
-        availableSpots[4][1] = 0;
-
-        availableSpots = placeQueen(availableSpots, temp_row, temp_col);
-        checkRow(availableSpots, row, 1);
-
-    } else if(start_row > 3 && start_col <= 3){//bottom left
-
-        temp_col = 7 - start_row;
-        temp_row = start_col;
-        availableSpots[4][1] = 0;
-
-        availableSpots = placeQueen(availableSpots, temp_row, temp_col);
-        checkRow(availableSpots, row, 3);
-
-    } else if(start_row > 3 && start_col > 3){//bottom right
-
-        temp_col = 7 - start_col;
-        temp_row = 7 - start_row;
-
-        availableSpots[4][1] = 0;
-        availableSpots = placeQueen(availableSpots, temp_row, temp_col);
-        checkRow(availableSpots, row, 2);
-
-    } else{//top left
-
-        availableSpots[4][1] = 0;
-        availableSpots = placeQueen(availableSpots, start_row, start_col);
-        checkRow(availableSpots, row, 4);
-    }
+    availableSpots = placeQueen(availableSpots, start_row, start_col);
+    checkRow(availableSpots, row);
 
     free(availableSpots);
     free(values);
